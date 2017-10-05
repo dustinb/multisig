@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <script type="text/javascript" src="require.js"></script>
+  <script type="text/javascript" src="http://code.jquery.com/jquery-2.1.4.min.js"></script>
+  <script type="text/javascript">
+    require.config({
+      baseUrl: "./",
+      paths: {
+        jquery: ['http://code.jquery.com/jquery-2.1.4.min.js', 'jquery'],
+        vue: ['http://cdnjs.cloudflare.com/ajax/libs/vue/1.0.10/vue.min', 'vue'],
+        'socket.io': ['http://cdn.socket.io/socket.io-1.3.7', 'socket.io']
+      }
+    });
+
+    require(['socket.io', 'vue', 'bitcoinjs-lib'], function(socketio, Vue, bitcoinl) {
+
+      var txs = [];
+      var bitcoin = bitcoinl.bitcoin;
+
+      vue = new Vue({
+        el: 'body',
+        data: {
+          txs: txs
+        }
+      });
+
+      var socket = socketio('http://192.168.254.118:3000');
+
+      socket.on('connect', function(data) {
+        console.log('Connect!');
+        socket.emit('register',
+          [
+            {
+              name: 'Dustin\'s Phone',
+              address: 'n4GXsB9rHfRx5CXP78ZPwcxqkwKG6vXu5b',
+              sig: 'ILhYpinCQBTqEtMdbCijs7REAuTdDmioluXCx8IYujD3f8N43gCfZD7VvXqVcMVRGU+SqEDkaRefqYEyo9+i9HI='
+            }
+          ]
+        );
+      });
+
+      // Would like our public key fro
+      socket.on('pubkey', function(fund) {
+        console.log(fund.name + ' ' + fund._id);
+        var pair = bitcoin.ECPair.fromWIF('cTRa78FCBcMH9hAWo3mqf1k7XWeLTanLwiVK4YKyf7aCXvb6wG5A', bitcoin.networks.testnet);
+        socket.emit('ackfund', {fund: fund._id, key: pair.getPublicKeyBuffer().toString('hex')});
+      });
+
+      $('.js-test-fund').on('click', function() {
+
+          socket.emit('fund', {
+            name: 'Random chance',
+            created: "n4GXsB9rHfRx5CXP78ZPwcxqkwKG6vXu5b",
+            addresses: ["n4GXsB9rHfRx5CXP78ZPwcxqkwKG6vXu5b", "mikNjhHQsqfXg62AgYXQ6hNTx5ZP5Hxdq5"],
+            required: 2
+          });
+
+      });
+    });
+  </script>
+</head>
+<html>
+<body>
+<pre>
+ Phone #1 n4GXsB9rHfRx5CXP78ZPwcxqkwKG6vXu5b  cTRa78FCBcMH9hAWo3mqf1k7XWeLTanLwiVK4YKyf7aCXvb6wG5A
+
+  Try a fund with n4GXsB9rHfRx5CXP78ZPwcxqkwKG6vXu5b, and 40% chance mu94Fs6Yf5ht6VM5dEMiv44LF8t9KDTzvT
+  <button class="js-test-fund" onclick="testFund(); return false;">Test Fund</button>
+
+  </script>
+</pre>
+</body>
+</html>
